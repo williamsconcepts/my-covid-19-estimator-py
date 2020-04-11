@@ -1,8 +1,11 @@
 def estimator(data):
+  return data
     numberOfDays = data["timeToElapse"]
     durationType = data["periodType"]
     reportedCases = data["reportedCases"]
     hospitalBeds = data["totalHospitalBeds"]
+    income = data["region"]["avgDailyIncomeInUSD"]
+    percentage = data["region"]["avgDailyIncomePopulation"]
 
     def daysConverter(number, durationType):
         if data["periodType"] == 'days':
@@ -18,7 +21,7 @@ def estimator(data):
         hospitalBeds = hospitalBeds * .35
         impact = reportedCases * 10
         severeImpact = reportedCases * 50
-        
+
         impactTime = impact * ( 2 ** (numberOfDays//3))
         impactTimeSevere = severeImpact * ( 2 ** (numberOfDays//3))
 
@@ -30,10 +33,17 @@ def estimator(data):
         hospitalBedsLeft = int(hospitalBedsLeft)
         severeHospitalBedsLeft = int(severeHospitalBedsLeft)
 
-        return impact, severeImpact, impactTime, impactTimeSevere, severeCasesByRequestedTime, severeSevereCasesByRequestedTime, hospitalBedsLeft, severeHospitalBedsLeft
+        icuCases = int(( .05 * impactTime))
+        severeIcuCases = int((.05 * impactTimeSevere))
+        ventilatorCases = int(( .02 * impactTime))
+        severeVentilatorCases = int((.02 * impactTimeSevere))
+        dollarsInFlight = int((impactTime * income * percentage) / numberOfDays)
+        severeDollarsInFlight = int((impactTimeSevere * income * percentage) / numberOfDays)
+
+        return impact, severeImpact, impactTime, impactTimeSevere, severeCasesByRequestedTime, severeSevereCasesByRequestedTime, hospitalBedsLeft, severeHospitalBedsLeft, icuCases, severeIcuCases, ventilatorCases, severeVentilatorCases, dollarsInFlight, severeDollarsInFlight
 
     numberOfDays = daysConverter(numberOfDays, durationType)
-    currentlyInfected, severeCurrentlyInfected, requestedTime, requestedTimeSevere, severeCasesByRequestedTime, severeSevereCasesByRequestedTime, hospitalBedsLeft, severeHospitalBedsLeft = impactAssess(reportedCases, numberOfDays, hospitalBeds)
+    currentlyInfected, severeCurrentlyInfected, requestedTime, requestedTimeSevere, severeCasesByRequestedTime, severeSevereCasesByRequestedTime, hospitalBedsLeft, severeHospitalBedsLeft, icuCases, severeIcuCases, ventilatorCases, severeVentilatorCases, dollarsInFlight, severeDollarsInFlight = impactAssess(reportedCases, numberOfDays, hospitalBeds)
 
     data = {}
     dataAndela = data
@@ -42,14 +52,20 @@ def estimator(data):
         "currentlyInfected": currentlyInfected,
         "infectionsByRequestedTime": requestedTime,
         "severeCasesByRequestedTime": severeCasesByRequestedTime,
-        "hospitalBedsByRequestedTime": hospitalBedsLeft
+        "hospitalBedsByRequestedTime": hospitalBedsLeft,
+        "casesForICUByRequestedTime": icuCases,
+        "casesForVentilatorsByRequestedTime": ventilatorCases, 
+        "dollarsInFlight": dollarsInFlight
     }
 
     severeImpact = {
         "currentlyInfected": severeCurrentlyInfected,
         "infectionsByRequestedTime": requestedTimeSevere,
         "severeCasesByRequestedTime": severeSevereCasesByRequestedTime,
-        "hospitalBedsByRequestedTime": severeHospitalBedsLeft
+        "hospitalBedsByRequestedTime": severeHospitalBedsLeft,
+        "casesForICUByRequestedTime": severeIcuCases,
+        "casesForVentilatorsByRequestedTime": severeVentilatorCases,
+        "dollarsInFlight": severeDollarsInFlight
     }
 
     data["data"] = dataAndela
